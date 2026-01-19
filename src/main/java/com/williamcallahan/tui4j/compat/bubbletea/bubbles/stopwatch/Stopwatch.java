@@ -99,34 +99,48 @@ public class Stopwatch implements Model {
         return UpdateResult.from(this);
     }
 
+    /**
+     * Renders the elapsed time.
+     * <p>
+     * Formats the duration similar to Go's time.Duration string representation (e.g., "1h2m3s").
+     */
     @Override
     public String view() {
         return formatDuration(elapsed);
     }
 
+    /**
+     * Returns a command to resume the stopwatch tick loop.
+     */
     public Command start() {
-        running = true;
         return Command.sequence(
                 () -> new StartStopMsg(id, true),
                 tick()
         );
     }
 
+    /**
+     * Returns a command to halt the tick loop.
+     */
     public Command stop() {
-        running = false;
         return () -> new StartStopMsg(id, false);
     }
 
-    public Command toggle() {
-        if (running) {
-            return stop();
-        }
-        return start();
+    /**
+     * Returns a command to reset the elapsed time to zero.
+     */
+    public Command reset() {
+        return () -> new ResetMsg(id);
     }
 
-    public Command reset() {
-        elapsed = Duration.ZERO;
-        return () -> new ResetMsg(id);
+    /**
+     * Returns a command to switch between running and stopped states.
+     */
+    public Command toggle() {
+        return Command.sequence(
+                () -> new StartStopMsg(id, !running),
+                tick()
+        );
     }
 
     private static int nextId() {
@@ -138,47 +152,11 @@ public class Stopwatch implements Model {
     }
 
     private static String formatDuration(Duration duration) {
-        long nanos = duration.toNanos();
-        if (nanos < 0) {
-            nanos = -nanos;
+        if (duration.isZero()) {
+            return "0s";
         }
-
-        long seconds = nanos / 1_000_000_000L;
-        long nanosRemaining = nanos % 1_000_000_000L;
-
-        StringBuilder sb = new StringBuilder();
-
-        long hours = seconds / 3600;
-        long minutes = (seconds % 3600) / 60;
-        long secs = seconds % 60;
-
-        if (hours > 0) {
-            sb.append(hours).append(':');
-        }
-
-        if (minutes < 10) {
-            sb.append('0');
-        }
-        sb.append(minutes).append(':');
-
-        if (secs < 10) {
-            sb.append('0');
-        }
-        sb.append(secs);
-
-        if (nanosRemaining > 0) {
-            sb.append('.');
-            String nanosStr = Long.toString(nanosRemaining);
-            while (nanosStr.length() < 9) {
-                nanosStr = "0" + nanosStr;
-            }
-            int end = nanosStr.length();
-            while (end > 0 && nanosStr.charAt(end - 1) == '0') {
-                end--;
-            }
-            sb.append(nanosStr, 0, end);
-        }
-
-        return sb.toString();
+        String s = duration.toString();
+        // Remove PT and convert to lowercase to approximate Go's duration format
+        return s.substring(2).toLowerCase();
     }
 }

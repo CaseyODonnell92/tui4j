@@ -40,6 +40,36 @@ class StopwatchTest {
     }
 
     @Test
+    void testStartCommandDoesNotMutateState() {
+        Stopwatch stopwatch = new Stopwatch();
+
+        stopwatch.start();
+
+        assertThat(stopwatch.running()).isFalse();
+    }
+
+    @Test
+    void testStopCommandDoesNotMutateState() {
+        Stopwatch stopwatch = new Stopwatch();
+        stopwatch.update(new StartStopMsg(stopwatch.id(), true));
+
+        stopwatch.stop();
+
+        assertThat(stopwatch.running()).isTrue();
+    }
+
+    @Test
+    void testResetCommandDoesNotMutateElapsed() {
+        Stopwatch stopwatch = new Stopwatch();
+        stopwatch.update(new StartStopMsg(stopwatch.id(), true));
+        stopwatch.update(new TickMsg(stopwatch.id(), 0));
+
+        stopwatch.reset();
+
+        assertThat(stopwatch.elapsed()).isNotEqualTo(Duration.ZERO);
+    }
+
+    @Test
     void testStartStopMessageFromDifferentIdIsIgnored() {
         Stopwatch stopwatch = new Stopwatch();
         stopwatch.update(new StartStopMsg(999, true));
