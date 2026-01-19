@@ -7,6 +7,7 @@ import com.williamcallahan.tui4j.compat.bubbletea.UpdateResult;
 import com.williamcallahan.tui4j.compat.bubbletea.bubbles.key.Binding;
 import com.williamcallahan.tui4j.compat.bubbletea.lipgloss.Style;
 import com.williamcallahan.tui4j.compat.bubbletea.message.KeyPressMessage;
+import com.williamcallahan.tui4j.message.ErrorMessage;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,12 +19,23 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+/**
+ * File selection bubble.
+ * <p>
+ * Port of `bubbles/filepicker`.
+ * Allows navigating the filesystem and selecting files or directories.
+ */
 public class FilePicker implements Model {
 
     private static final int MARGIN_BOTTOM = 5;
     private static final int FILE_SIZE_WIDTH = 7;
     private static final int PADDING_LEFT = 2;
+    private static final String DEFAULT_CURSOR = ">";
+    private static final String EMPTY_MSG = "Bummer. No Files Found.";
+    private static final Logger logger = Logger.getLogger(FilePicker.class.getName());
 
     private final int id;
     private String path;
@@ -50,12 +62,13 @@ public class FilePicker implements Model {
     private AtomicInteger nextId;
     private boolean widthSet;
     private int terminalWidth;
+    private List<String> readErrors;
 
     public FilePicker() {
         this.nextId = new AtomicInteger(1);
         this.id = generateId();
         this.currentDirectory = ".";
-        this.cursorChar = ">";
+        this.cursorChar = DEFAULT_CURSOR;
         this.allowedTypes = new ArrayList<>();
         this.selected = 0;
         this.showPermissions = true;
@@ -75,12 +88,17 @@ public class FilePicker implements Model {
         this.files = new ArrayList<>();
         this.widthSet = false;
         this.terminalWidth = 0;
+        this.readErrors = new ArrayList<>();
     }
 
     private int generateId() {
         return nextId.getAndIncrement();
     }
 
+    /**
+     * Returns a command to populate the file list from the current directory.
+     * Respects showHidden rules.
+     */
     public Command init() {
         return readDir(this.currentDirectory, this.showHidden);
     }
@@ -90,15 +108,10 @@ public class FilePicker implements Model {
             try {
                 Path dirPath = Paths.get(directory);
                 List<DirEntry> entries = new ArrayList<>();
+                List<String> errors = new ArrayList<>();
                 try (var stream = Files.list(dirPath)) {
-                    stream.sorted(Comparator.comparing((Path p) -> {
-                        try {
-                            boolean isDir = Files.isDirectory(p);
-                            return !isDir;
-                        } catch (Exception e) {
-                            return true;
-                        }
-                    }).thenComparing(Path::getFileName)).forEach(p -> {
+                    stream.sorted(Comparator.comparing(FilePicker::isNotDir)
+                            .thenComparing(Path::getFileName)).forEach(p -> {
                         try {
                             boolean isDir = Files.isDirectory(p);
                             boolean isSymlink = Files.isSymbolicLink(p);
@@ -113,14 +126,28 @@ public class FilePicker implements Model {
                             String permissions = Files.getPosixFilePermissions(p).toString();
                             entries.add(new DirEntry(name, isDir, isSymlink, size, permissions));
                         } catch (Exception e) {
+                             String errorMsg = "Failed to read: " + p.getFileName() + " (" + e.getMessage() + ")";
+                             errors.add(errorMsg);
+                             logger.log(Level.WARNING, "Failed to read entry " + p, e);
                         }
                     });
                 }
-                return new ReadDirMessage(this.id, entries);
+                return new ReadDirMessage(this.id, entries, errors);
             } catch (Exception e) {
                 return new ErrorMessage(e);
             }
         };
+    }
+
+    private static boolean isNotDir(Path p) {
+        try {
+            return !Files.isDirectory(p);
+        } catch (Exception e) {
+            // Don't swallow, but we can't easily propagate inside stream comparator
+            // Log and fallback to file (safe default)
+            logger.log(Level.WARNING, "Failed to determine directory status for " + p, e);
+            return false;
+        }
     }
 
     public void setHeight(int height) {
@@ -142,123 +169,143 @@ public class FilePicker implements Model {
     @Override
     public UpdateResult<FilePicker> update(Message msg) {
         if (msg instanceof KeyPressMessage keyMsg) {
-            if (Binding.matches(keyMsg, keyMap.goToTop())) {
-                this.selected = 0;
-                this.min = 0;
-                this.max = this.height - 1;
-                return UpdateResult.from(this);
-            } else if (Binding.matches(keyMsg, keyMap.goToLast())) {
-                this.selected = Math.max(0, this.files.size() - 1);
-                this.min = Math.max(0, this.files.size() - this.height);
-                this.max = Math.max(0, this.files.size() - 1);
-                return UpdateResult.from(this);
-            } else if (Binding.matches(keyMsg, keyMap.down())) {
-                this.selected++;
-                if (this.selected >= this.files.size()) {
-                    this.selected = this.files.size() - 1;
-                }
-                if (this.selected > this.max) {
-                    this.min++;
-                    this.max++;
-                }
-                return UpdateResult.from(this);
-            } else if (Binding.matches(keyMsg, keyMap.up())) {
-                this.selected--;
-                if (this.selected < 0) {
-                    this.selected = 0;
-                }
-                if (this.selected < this.min) {
-                    this.min--;
-                    this.max--;
-                }
-                return UpdateResult.from(this);
-            } else if (Binding.matches(keyMsg, keyMap.pageDown())) {
-                this.selected += this.height;
-                if (this.selected >= this.files.size()) {
-                    this.selected = this.files.size() - 1;
-                }
-                this.min += this.height;
-                this.max += this.height;
-
-                if (this.max >= this.files.size()) {
-                    this.max = this.files.size() - 1;
-                    this.min = Math.max(0, this.max - this.height);
-                }
-                return UpdateResult.from(this);
-            } else if (Binding.matches(keyMsg, keyMap.pageUp())) {
-                this.selected -= this.height;
-                if (this.selected < 0) {
-                    this.selected = 0;
-                }
-                this.min -= this.height;
-                this.max -= this.height;
-
-                if (this.min < 0) {
-                    this.min = 0;
-                    this.max = this.min + this.height;
-                }
-                return UpdateResult.from(this);
-            } else if (Binding.matches(keyMsg, keyMap.back())) {
-                this.currentDirectory = Path.of(this.currentDirectory).getParent() != null
-                        ? Path.of(this.currentDirectory).getParent().toString()
-                        : ".";
-                if (this.selectedStack.length() > 0) {
-                    this.selected = this.selectedStack.pop();
-                    this.min = this.minStack.pop();
-                    this.max = this.maxStack.pop();
-                } else {
-                    this.selected = 0;
-                    this.min = 0;
-                    this.max = this.height - 1;
-                }
-                return UpdateResult.from(this, readDir(this.currentDirectory, this.showHidden));
-            } else if (Binding.matches(keyMsg, keyMap.open())) {
-                if (this.files.isEmpty()) {
-                    return UpdateResult.from(this);
-                }
-
-                DirEntry f = this.files.get(this.selected);
-                boolean isDir = f.isDir();
-                boolean isSymlink = f.isSymlink();
-
-                if (isSymlink) {
-                    try {
-                        Path symlinkPath = Files.readSymbolicLink(Paths.get(this.currentDirectory, f.name()));
-                        isDir = Files.isDirectory(symlinkPath);
-                    } catch (Exception e) {
-                    }
-                }
-
-                if ((!isDir && this.fileAllowed) || (isDir && this.dirAllowed)) {
-                    if (Binding.matches(keyMsg, keyMap.select())) {
-                        this.path = Paths.get(this.currentDirectory, f.name()).toString();
-                    }
-                }
-
-                if (!isDir) {
-                    return UpdateResult.from(this);
-                }
-
-                this.currentDirectory = Paths.get(this.currentDirectory, f.name()).toString();
-                this.selectedStack.push(this.selected);
-                this.minStack.push(this.min);
-                this.maxStack.push(this.max);
-                this.selected = 0;
-                this.min = 0;
-                this.max = this.height - 1;
-                return UpdateResult.from(this, readDir(this.currentDirectory, this.showHidden));
-            }
+            return handleKeyPress(keyMsg);
         } else if (msg instanceof ReadDirMessage readDirMsg) {
             if (readDirMsg.id() != this.id) {
                 return UpdateResult.from(this);
             }
             this.files = readDirMsg.entries();
+            this.readErrors = readDirMsg.errors();
             this.max = Math.max(this.max, this.height - 1);
             return UpdateResult.from(this);
         } else if (msg instanceof ErrorMessage errorMsg) {
+            logger.log(Level.WARNING, "File picker failed to read directory", errorMsg.error());
+            return UpdateResult.from(this);
         }
 
         return UpdateResult.from(this);
+    }
+
+    private UpdateResult<FilePicker> handleKeyPress(KeyPressMessage keyMsg) {
+        if (handleNavigation(keyMsg)) {
+            return UpdateResult.from(this);
+        } else if (Binding.matches(keyMsg, keyMap.back())) {
+            this.currentDirectory = Path.of(this.currentDirectory).getParent() != null
+                    ? Path.of(this.currentDirectory).getParent().toString()
+                    : ".";
+            if (this.selectedStack.length() > 0) {
+                this.selected = this.selectedStack.pop();
+                this.min = this.minStack.pop();
+                this.max = this.maxStack.pop();
+            } else {
+                this.selected = 0;
+                this.min = 0;
+                this.max = this.height - 1;
+            }
+            return UpdateResult.from(this, readDir(this.currentDirectory, this.showHidden));
+        } else if (Binding.matches(keyMsg, keyMap.open())) {
+            return handleOpen(keyMsg);
+        }
+        return UpdateResult.from(this);
+    }
+
+    private boolean handleNavigation(KeyPressMessage keyMsg) {
+        if (Binding.matches(keyMsg, keyMap.goToTop())) {
+            this.selected = 0;
+            this.min = 0;
+            this.max = this.height - 1;
+            return true;
+        } else if (Binding.matches(keyMsg, keyMap.goToLast())) {
+            this.selected = Math.max(0, this.files.size() - 1);
+            this.min = Math.max(0, this.files.size() - this.height);
+            this.max = Math.max(0, this.files.size() - 1);
+            return true;
+        } else if (Binding.matches(keyMsg, keyMap.down())) {
+            this.selected++;
+            if (this.selected >= this.files.size()) {
+                this.selected = this.files.size() - 1;
+            }
+            if (this.selected > this.max) {
+                this.min++;
+                this.max++;
+            }
+            return true;
+        } else if (Binding.matches(keyMsg, keyMap.up())) {
+            this.selected--;
+            if (this.selected < 0) {
+                this.selected = 0;
+            }
+            if (this.selected < this.min) {
+                this.min--;
+                this.max--;
+            }
+            return true;
+        } else if (Binding.matches(keyMsg, keyMap.pageDown())) {
+            this.selected += this.height;
+            if (this.selected >= this.files.size()) {
+                this.selected = this.files.size() - 1;
+            }
+            this.min += this.height;
+            this.max += this.height;
+
+            if (this.max >= this.files.size()) {
+                this.max = this.files.size() - 1;
+                this.min = Math.max(0, this.max - this.height);
+            }
+            return true;
+        } else if (Binding.matches(keyMsg, keyMap.pageUp())) {
+            this.selected -= this.height;
+            if (this.selected < 0) {
+                this.selected = 0;
+            }
+            this.min -= this.height;
+            this.max -= this.height;
+
+            if (this.min < 0) {
+                this.min = 0;
+                this.max = this.min + this.height;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private UpdateResult<FilePicker> handleOpen(KeyPressMessage keyMsg) {
+        if (this.files.isEmpty()) {
+            return UpdateResult.from(this);
+        }
+
+        DirEntry f = this.files.get(this.selected);
+        boolean isDir = f.isDir();
+        boolean isSymlink = f.isSymlink();
+
+        if (isSymlink) {
+            try {
+                Path symlinkPath = Files.readSymbolicLink(Paths.get(this.currentDirectory, f.name()));
+                isDir = Files.isDirectory(symlinkPath);
+            } catch (Exception e) {
+                return UpdateResult.from(this, () -> new ErrorMessage(e));
+            }
+        }
+
+        if ((!isDir && this.fileAllowed) || (isDir && this.dirAllowed)) {
+            if (Binding.matches(keyMsg, keyMap.select())) {
+                this.path = Paths.get(this.currentDirectory, f.name()).toString();
+            }
+        }
+
+        if (!isDir) {
+            return UpdateResult.from(this);
+        }
+
+        this.currentDirectory = Paths.get(this.currentDirectory, f.name()).toString();
+        this.selectedStack.push(this.selected);
+        this.minStack.push(this.min);
+        this.maxStack.push(this.max);
+        this.selected = 0;
+        this.min = 0;
+        this.max = this.height - 1;
+        return UpdateResult.from(this, readDir(this.currentDirectory, this.showHidden));
     }
 
     @Override
@@ -268,7 +315,7 @@ public class FilePicker implements Model {
         if (this.files.isEmpty()) {
             sb.append(this.styles.emptyDirectory()
                     .height(this.height)
-                    .render("Bummer. No Files Found."));
+                    .render(EMPTY_MSG));
             return sb.toString();
         }
 
@@ -280,64 +327,7 @@ public class FilePicker implements Model {
             DirEntry f = this.files.get(i);
             boolean disabled = !canSelect(f.name()) && !f.isDir();
 
-            String line;
-            if (this.selected == i) {
-                StringBuilder selectedBuilder = new StringBuilder();
-                if (this.showPermissions) {
-                    selectedBuilder.append(" ").append(f.permissions());
-                }
-                if (this.showSize) {
-                    selectedBuilder.append(formatSize(f.size()));
-                }
-                selectedBuilder.append(" ").append(f.name());
-
-                if (f.isSymlink()) {
-                    try {
-                        Path symlinkPath = Files.readSymbolicLink(Paths.get(this.currentDirectory, f.name()));
-                        selectedBuilder.append(" → ").append(symlinkPath);
-                    } catch (Exception e) {
-                    }
-                }
-
-                if (disabled) {
-                    sb.append(this.styles.disabledCursor().render(this.cursorChar));
-                    sb.append(this.styles.disabledSelected().render(selectedBuilder.toString()));
-                } else {
-                    sb.append(this.styles.cursor().render(this.cursorChar));
-                    sb.append(this.styles.selected().render(selectedBuilder.toString()));
-                }
-                sb.append("\n");
-                continue;
-            }
-
-            Style style = this.styles.file();
-            if (f.isDir()) {
-                style = this.styles.directory();
-            } else if (f.isSymlink()) {
-                style = this.styles.symlink();
-            } else if (disabled) {
-                style = this.styles.disabledFile();
-            }
-
-            sb.append(this.styles.cursor().render(" "));
-
-            String fileName = style.render(f.name());
-            if (f.isSymlink()) {
-                try {
-                    Path symlinkPath = Files.readSymbolicLink(Paths.get(this.currentDirectory, f.name()));
-                    fileName += " → " + symlinkPath;
-                } catch (Exception e) {
-                }
-            }
-
-            if (this.showPermissions) {
-                sb.append(" ").append(this.styles.permission().render(f.permissions()));
-            }
-            if (this.showSize) {
-                sb.append(this.styles.fileSize().render(formatSize(f.size())));
-            }
-            sb.append(" ").append(fileName);
-            sb.append("\n");
+            sb.append(renderRow(i, f, disabled));
         }
 
         int currentHeight = sb.toString().split("\n", -1).length;
@@ -345,6 +335,70 @@ public class FilePicker implements Model {
             sb.append("\n");
         }
 
+        return sb.toString();
+    }
+
+    private String renderRow(int i, DirEntry f, boolean disabled) {
+        StringBuilder sb = new StringBuilder();
+        if (this.selected == i) {
+            StringBuilder selectedBuilder = new StringBuilder();
+            if (this.showPermissions) {
+                selectedBuilder.append(" ").append(f.permissions());
+            }
+            if (this.showSize) {
+                selectedBuilder.append(formatSize(f.size()));
+            }
+            selectedBuilder.append(" ").append(f.name());
+
+            if (f.isSymlink()) {
+                try {
+                    Path symlinkPath = Files.readSymbolicLink(Paths.get(this.currentDirectory, f.name()));
+                    selectedBuilder.append(" → ").append(symlinkPath);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Failed to resolve symlink for " + f.name(), e);
+                }
+            }
+
+            if (disabled) {
+                sb.append(this.styles.disabledCursor().render(this.cursorChar));
+                sb.append(this.styles.disabledSelected().render(selectedBuilder.toString()));
+            } else {
+                sb.append(this.styles.cursor().render(this.cursorChar));
+                sb.append(this.styles.selected().render(selectedBuilder.toString()));
+            }
+            sb.append("\n");
+            return sb.toString();
+        }
+
+        Style style = this.styles.file();
+        if (f.isDir()) {
+            style = this.styles.directory();
+        } else if (f.isSymlink()) {
+            style = this.styles.symlink();
+        } else if (disabled) {
+            style = this.styles.disabledFile();
+        }
+
+        sb.append(this.styles.cursor().render(" "));
+
+        String fileName = style.render(f.name());
+        if (f.isSymlink()) {
+            try {
+                Path symlinkPath = Files.readSymbolicLink(Paths.get(this.currentDirectory, f.name()));
+                fileName += " → " + symlinkPath;
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Failed to resolve symlink for " + f.name(), e);
+            }
+        }
+
+        if (this.showPermissions) {
+            sb.append(" ").append(this.styles.permission().render(f.permissions()));
+        }
+        if (this.showSize) {
+            sb.append(this.styles.fileSize().render(formatSize(f.size())));
+        }
+        sb.append(" ").append(fileName);
+        sb.append("\n");
         return sb.toString();
     }
 
@@ -396,6 +450,7 @@ public class FilePicker implements Model {
                     Path symlinkPath = Files.readSymbolicLink(Paths.get(this.currentDirectory, f.name()));
                     isDir = Files.isDirectory(symlinkPath);
                 } catch (Exception e) {
+                    logger.log(Level.WARNING, "Failed to resolve symlink for " + f.name(), e);
                     return false;
                 }
             }
@@ -430,6 +485,21 @@ public class FilePicker implements Model {
 
     public String currentDirectory() {
         return this.currentDirectory;
+    }
+
+    /**
+     * Returns any errors encountered while reading the current directory.
+     * Errors are cleared when a new directory is read.
+     */
+    public List<String> readErrors() {
+        return List.copyOf(this.readErrors);
+    }
+
+    /**
+     * Returns true if there were errors reading the current directory.
+     */
+    public boolean hasReadErrors() {
+        return !this.readErrors.isEmpty();
     }
 
     public void setCurrentDirectory(String directory) {
@@ -512,14 +582,23 @@ public class FilePicker implements Model {
         this.cursorChar = cursorChar;
     }
 
+    /**
+     * Port of the file picker directory entry model.
+     * Upstream: github.com/charmbracelet/bubbles/filepicker (dirEntry)
+     *
+     * @param name entry name
+     * @param isDir whether the entry is a directory
+     * @param isSymlink whether the entry is a symlink
+     * @param size entry size in bytes
+     * @param permissions entry permissions string
+     */
     public record DirEntry(String name, boolean isDir, boolean isSymlink, long size, String permissions) {
     }
 
-    private record ReadDirMessage(int id, List<DirEntry> entries) implements Message {
+    private record ReadDirMessage(int id, List<DirEntry> entries, List<String> errors) implements Message {
     }
 
-    private record ErrorMessage(Exception err) implements Message {
-    }
+// removed private ErrorMessage record
 
     private static class Stack {
         private final List<Integer> items = new ArrayList<>();

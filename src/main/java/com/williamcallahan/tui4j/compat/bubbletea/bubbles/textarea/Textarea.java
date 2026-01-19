@@ -27,6 +27,12 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static com.williamcallahan.tui4j.compat.bubbletea.Command.batch;
 
+/**
+ * Multi-line text editor bubble.
+ * <p>
+ * Port of `bubbles/textarea`.
+ * Supports cursor movement, insertion, deletion, and line wrapping.
+ */
 public class Textarea implements Model {
 
     public static class Style {
@@ -463,6 +469,10 @@ public class Textarea implements Model {
         return null;
     }
 
+    /**
+     * Updates the model based on key events or command messages.
+     * Handles cursor blink and text mutations.
+     */
     @Override
     public UpdateResult<Textarea> update(Message msg) {
         if (!focus) {
@@ -496,94 +506,166 @@ public class Textarea implements Model {
     }
 
     private void handleKeyPress(KeyPressMessage keyPressMessage) {
+        if (handleEditing(keyPressMessage)) {
+            return;
+        }
+        if (handleNavigation(keyPressMessage)) {
+            return;
+        }
+        if (handleTransform(keyPressMessage)) {
+            return;
+        }
+        insertRunesFromUserInput(keyPressMessage.runes());
+    }
+
+    private boolean handleEditing(KeyPressMessage keyPressMessage) {
         if (Binding.matches(keyPressMessage, keyMap.deleteAfterCursor())) {
-            col = clamp(col, 0, value.get(row).length);
-            if (col >= value.get(row).length) {
-                mergeLineBelow(row);
-            } else {
-                deleteAfterCursor();
-            }
+            handleDeleteAfterCursor();
+            return true;
         } else if (Binding.matches(keyPressMessage, keyMap.deleteBeforeCursor())) {
-            col = clamp(col, 0, value.get(row).length);
-            if (col <= 0) {
-                mergeLineAbove(row);
-            } else {
-                deleteBeforeCursor();
-            }
+            handleDeleteBeforeCursor();
+            return true;
         } else if (Binding.matches(keyPressMessage, keyMap.deleteCharacterBackward())) {
-            col = clamp(col, 0, value.get(row).length);
-            if (col <= 0) {
-                mergeLineAbove(row);
-            } else if (value.get(row).length > 0) {
-                char[] newLine = new char[max(0, value.get(row).length - 1)];
-                System.arraycopy(value.get(row), 0, newLine, 0, max(0, col - 1));
-                System.arraycopy(value.get(row), col, newLine, max(0, col - 1), value.get(row).length - col);
-                value.set(row, newLine);
-                if (col > 0) {
-                    setCursor(col - 1);
-                }
-            }
+            handleDeleteCharacterBackward();
+            return true;
         } else if (Binding.matches(keyPressMessage, keyMap.deleteCharacterForward())) {
-            if (value.get(row).length > 0 && col < value.get(row).length) {
-                char[] newLine = new char[value.get(row).length - 1];
-                System.arraycopy(value.get(row), 0, newLine, 0, col);
-                System.arraycopy(value.get(row), col + 1, newLine, col, value.get(row).length - col - 1);
-                value.set(row, newLine);
-            }
-            if (col >= value.get(row).length) {
-                mergeLineBelow(row);
-            }
+            handleDeleteCharacterForward();
+            return true;
         } else if (Binding.matches(keyPressMessage, keyMap.deleteWordBackward())) {
-            if (col <= 0) {
-                mergeLineAbove(row);
-            } else {
-                deleteWordLeft();
-            }
+            handleDeleteWordBackward();
+            return true;
         } else if (Binding.matches(keyPressMessage, keyMap.deleteWordForward())) {
-            col = clamp(col, 0, value.get(row).length);
-            if (col >= value.get(row).length) {
-                mergeLineBelow(row);
-            } else {
-                deleteWordRight();
-            }
+            handleDeleteWordForward();
+            return true;
         } else if (Binding.matches(keyPressMessage, keyMap.insertNewline())) {
-            if (maxHeight > 0 && value.size() >= maxHeight) {
-                return;
-            }
-            col = clamp(col, 0, value.get(row).length);
-            splitLine(row, col);
-        } else if (Binding.matches(keyPressMessage, keyMap.lineEnd())) {
-            cursorEnd();
-        } else if (Binding.matches(keyPressMessage, keyMap.lineStart())) {
-            cursorStart();
-        } else if (Binding.matches(keyPressMessage, keyMap.characterForward())) {
-            characterRight();
-        } else if (Binding.matches(keyPressMessage, keyMap.lineNext())) {
-            cursorDown();
-        } else if (Binding.matches(keyPressMessage, keyMap.wordForward())) {
-            wordRight();
+            handleInsertNewline();
+            return true;
         } else if (Binding.matches(keyPressMessage, keyMap.paste())) {
             insertRunesFromUserInput(keyPressMessage.runes());
+            return true;
+        }
+        return false;
+    }
+
+    private boolean handleNavigation(KeyPressMessage keyPressMessage) {
+        if (Binding.matches(keyPressMessage, keyMap.lineEnd())) {
+            cursorEnd();
+            return true;
+        } else if (Binding.matches(keyPressMessage, keyMap.lineStart())) {
+            cursorStart();
+            return true;
+        } else if (Binding.matches(keyPressMessage, keyMap.characterForward())) {
+            characterRight();
+            return true;
+        } else if (Binding.matches(keyPressMessage, keyMap.lineNext())) {
+            cursorDown();
+            return true;
+        } else if (Binding.matches(keyPressMessage, keyMap.wordForward())) {
+            wordRight();
+            return true;
         } else if (Binding.matches(keyPressMessage, keyMap.characterBackward())) {
             characterLeft(false);
+            return true;
         } else if (Binding.matches(keyPressMessage, keyMap.linePrevious())) {
             cursorUp();
+            return true;
         } else if (Binding.matches(keyPressMessage, keyMap.wordBackward())) {
             wordLeft();
+            return true;
         } else if (Binding.matches(keyPressMessage, keyMap.inputBegin())) {
             moveToBegin();
+            return true;
         } else if (Binding.matches(keyPressMessage, keyMap.inputEnd())) {
             moveToEnd();
-        } else if (Binding.matches(keyPressMessage, keyMap.lowercaseWordForward())) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean handleTransform(KeyPressMessage keyPressMessage) {
+        if (Binding.matches(keyPressMessage, keyMap.lowercaseWordForward())) {
             lowercaseRight();
+            return true;
         } else if (Binding.matches(keyPressMessage, keyMap.uppercaseWordForward())) {
             uppercaseRight();
+            return true;
         } else if (Binding.matches(keyPressMessage, keyMap.capitalizeWordForward())) {
             capitalizeRight();
+            return true;
         } else if (Binding.matches(keyPressMessage, keyMap.transposeCharacterBackward())) {
             transposeLeft();
+            return true;
+        }
+        return false;
+    }
+
+    private void handleInsertNewline() {
+        if (maxHeight > 0 && value.size() >= maxHeight) {
+            return;
+        }
+        col = clamp(col, 0, value.get(row).length);
+        splitLine(row, col);
+    }
+
+    private void handleDeleteWordForward() {
+        col = clamp(col, 0, value.get(row).length);
+        if (col >= value.get(row).length) {
+            mergeLineBelow(row);
         } else {
-            insertRunesFromUserInput(keyPressMessage.runes());
+            deleteWordRight();
+        }
+    }
+
+    private void handleDeleteWordBackward() {
+        if (col <= 0) {
+            mergeLineAbove(row);
+        } else {
+            deleteWordLeft();
+        }
+    }
+
+    private void handleDeleteCharacterForward() {
+        if (value.get(row).length > 0 && col < value.get(row).length) {
+            char[] newLine = new char[value.get(row).length - 1];
+            System.arraycopy(value.get(row), 0, newLine, 0, col);
+            System.arraycopy(value.get(row), col + 1, newLine, col, value.get(row).length - col - 1);
+            value.set(row, newLine);
+        }
+        if (col >= value.get(row).length) {
+            mergeLineBelow(row);
+        }
+    }
+
+    private void handleDeleteCharacterBackward() {
+        col = clamp(col, 0, value.get(row).length);
+        if (col <= 0) {
+            mergeLineAbove(row);
+        } else if (value.get(row).length > 0) {
+            char[] newLine = new char[max(0, value.get(row).length - 1)];
+            System.arraycopy(value.get(row), 0, newLine, 0, max(0, col - 1));
+            System.arraycopy(value.get(row), col, newLine, max(0, col - 1), value.get(row).length - col);
+            value.set(row, newLine);
+            if (col > 0) {
+                setCursor(col - 1);
+            }
+        }
+    }
+
+    private void handleDeleteBeforeCursor() {
+        col = clamp(col, 0, value.get(row).length);
+        if (col <= 0) {
+            mergeLineAbove(row);
+        } else {
+            deleteBeforeCursor();
+        }
+    }
+
+    private void handleDeleteAfterCursor() {
+        col = clamp(col, 0, value.get(row).length);
+        if (col >= value.get(row).length) {
+            mergeLineBelow(row);
+        } else {
+            deleteAfterCursor();
         }
     }
 
