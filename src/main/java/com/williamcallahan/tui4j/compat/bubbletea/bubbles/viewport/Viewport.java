@@ -16,6 +16,12 @@ import java.util.List;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
+/**
+ * Scrollable viewport for viewing content larger than the screen.
+ * <p>
+ * Port of `bubbles/viewport`.
+ * Handles vertical scrolling and panning of wrapped or raw text content.
+ */
 public class Viewport implements Model {
 
     public static class KeyMap {
@@ -158,6 +164,10 @@ public class Viewport implements Model {
         return max(0.0, min(1.0, v));
     }
 
+    /**
+     * Replaces the viewport content and recalculates dimensions.
+     * Resets position if content shrinks above current scroll.
+     */
     public void setContent(String content) {
         if (content == null || content.isEmpty()) {
             this.lines = new ArrayList<>();
@@ -173,7 +183,7 @@ public class Viewport implements Model {
     }
 
     private int maxYOffset() {
-        return max(0, lines.size() - height + style.getVerticalFrameSize() + 1);
+        return max(0, lines.size() - height + style.getVerticalFrameSize());
     }
 
     private List<String> visibleLines() {
@@ -342,15 +352,11 @@ public class Viewport implements Model {
             content.append("\n");
         }
 
-        try {
-            String rendered = style
-                    .width(effectiveWidth)
-                    .height(effectiveHeight)
-                    .render(content.toString());
-            return rendered;
-        } catch (Exception e) {
-            return content.toString();
-        }
+        String rendered = style
+                .width(effectiveWidth)
+                .height(effectiveHeight)
+                .render(content.toString());
+        return rendered;
     }
 
     private int findLongestLineWidth(List<String> lines) {

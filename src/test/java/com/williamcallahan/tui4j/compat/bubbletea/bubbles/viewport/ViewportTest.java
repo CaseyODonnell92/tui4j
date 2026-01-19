@@ -3,11 +3,19 @@ package com.williamcallahan.tui4j.compat.bubbletea.bubbles.viewport;
 import com.williamcallahan.tui4j.compat.bubbletea.message.KeyPressMessage;
 import com.williamcallahan.tui4j.compat.bubbletea.input.key.Key;
 import com.williamcallahan.tui4j.compat.bubbletea.input.key.KeyType;
+import com.williamcallahan.tui4j.term.TerminalInfo;
+import com.williamcallahan.tui4j.compat.bubbletea.lipgloss.color.NoColor;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ViewportTest {
+
+    @BeforeEach
+    public void setup() {
+        TerminalInfo.provide(() -> new TerminalInfo(false, new NoColor()));
+    }
 
     @Test
     public void testNewViewport() {
@@ -75,7 +83,7 @@ public class ViewportTest {
         assertEquals(6, viewport.getYOffset());
 
         viewport.pageDown();
-        assertEquals(8, viewport.getYOffset());
+        assertEquals(7, viewport.getYOffset());
         assertTrue(viewport.atBottom());
     }
 
@@ -301,7 +309,7 @@ public class ViewportTest {
         viewport.setContent(content);
 
         int maxOffset = viewport.getMaxYOffset();
-        assertEquals(8, maxOffset);
+        assertEquals(7, maxOffset);
     }
 
     @Test
