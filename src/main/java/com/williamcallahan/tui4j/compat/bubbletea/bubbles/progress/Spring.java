@@ -1,7 +1,15 @@
 package com.williamcallahan.tui4j.compat.bubbletea.bubbles.progress;
 
+/**
+ * Port of the progress spring helper.
+ * Upstream: github.com/charmbracelet/bubbles/progress (Spring)
+ */
 public class Spring {
 
+    /**
+     * Port of the spring update strategy.
+     * Upstream: github.com/charmbracelet/bubbles/progress (springUpdateFn)
+     */
     public interface SpringUpdate {
         SpringUpdateResult update(double position, double velocity, double target);
     }

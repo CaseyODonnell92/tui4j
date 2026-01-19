@@ -4,11 +4,20 @@ import java.util.EnumMap;
 
 /**
  * Port of Bubble Tea key aliases.
- * Bubble Tea: bubbletea/key.go
+ * Upstream: github.com/charmbracelet/bubbletea (key.go)
  */
 public class KeyAliases {
+
+    /**
+     * Port of Bubble Tea key alias mappings.
+     * Upstream: github.com/charmbracelet/bubbletea (key.go)
+     */
     public static final EnumMap<KeyAlias, KeyType> CONTROL_KEY_ALIASES = new EnumMap<>(KeyAlias.class);
 
+    /**
+     * Port of Bubble Tea key alias names.
+     * Upstream: github.com/charmbracelet/bubbletea (key.go)
+     */
     public enum KeyAlias {
         KeyNull, KeyBreak, KeyEnter, KeyBackspace, KeyTab, KeyEsc, KeyEscape,
         KeyCtrlAt, KeyCtrlA, KeyCtrlB, KeyCtrlC, KeyCtrlD, KeyCtrlE, KeyCtrlF,

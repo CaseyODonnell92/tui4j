@@ -4,11 +4,19 @@ import com.williamcallahan.tui4j.compat.bubbletea.lipgloss.Renderer;
 import org.jline.utils.AttributedStyle;
 
 /**
- * Port of Lip Gloss color.
- * Bubble Tea: bubbletea/examples/list-fancy/main.go
+ * Simple hex or ANSI color.
+ * <p>
+ * Port of `lipgloss/color`.
+ * Represents a color that can be applied to terminal output.
  */
 public final class Color implements TerminalColor {
 
+    /**
+     * Creates a {@link Color} from a string representation.
+     *
+     * @param color color string
+     * @return color instance
+     */
     public static Color color(String color) {
         return new Color(color);
     }

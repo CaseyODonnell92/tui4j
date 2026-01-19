@@ -1,8 +1,8 @@
 package com.williamcallahan.tui4j.compat.bubbletea.lipgloss.tree;
 
 /**
- * Port of Lip Gloss tree enumerator.
- * Bubble Tea: bubbletea/examples/list-fancy/main.go
+ * Port of the Lip Gloss tree enumerator.
+ * Upstream: github.com/charmbracelet/lipgloss/tree (Enumerator)
  */
 @FunctionalInterface
 public interface TreeEnumerator {

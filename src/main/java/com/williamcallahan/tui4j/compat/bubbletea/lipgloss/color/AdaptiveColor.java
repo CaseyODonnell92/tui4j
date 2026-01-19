@@ -12,7 +12,14 @@ public final class AdaptiveColor implements TerminalColor {
     private final Color light;
     private final Color dark;
 
+    /**
+     * Creates an adaptive color with light and dark variants.
+     *
+     * @param light light background color value
+     * @param dark dark background color value
+     */
     public AdaptiveColor(String light, String dark) {
+
         this.light = Color.color(light);
         this.dark = Color.color(dark);
     }

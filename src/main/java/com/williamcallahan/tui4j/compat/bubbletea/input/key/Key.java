@@ -3,6 +3,11 @@ package com.williamcallahan.tui4j.compat.bubbletea.input.key;
 /**
  * Port of Bubble Tea key.
  * Bubble Tea: bubbletea/key.go
+ *
+ * @param type key type
+ * @param runes rune sequence for {@code KeyRunes}
+ * @param alt whether the Alt modifier is set
+ * @param paste whether this represents a paste sequence
  */
 public record Key(KeyType type, char[] runes, boolean alt, boolean paste) {
 

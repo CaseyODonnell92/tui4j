@@ -7,4 +7,10 @@ import com.williamcallahan.tui4j.compat.bubbletea.Message;
  * Bubble Tea: bubbletea/screen.go
  */
 public class ClearScreenMessage implements Message {
+
+    /**
+     * Creates a clear screen message.
+     */
+    public ClearScreenMessage() {
+    }
 }

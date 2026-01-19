@@ -3,6 +3,10 @@ package com.williamcallahan.tui4j.compat.bubbletea.lipgloss.color;
 /**
  * Port of Lip Gloss hsl.
  * Bubble Tea: bubbletea/examples/list-fancy/main.go
+ *
+ * @param h hue in degrees
+ * @param s saturation (0-1)
+ * @param l lightness (0-1)
  */
 public record HSL(float h, float s, float l) {
 

@@ -2,6 +2,10 @@ package com.williamcallahan.tui4j.compat.bubbletea.bubbles.filepicker;
 
 import com.williamcallahan.tui4j.compat.bubbletea.bubbles.key.Binding;
 
+/**
+ * Port of Bubbles file picker key bindings.
+ * Upstream: github.com/charmbracelet/bubbles/filepicker (KeyMap)
+ */
 public class KeyMap {
 
     private Binding goToTop;

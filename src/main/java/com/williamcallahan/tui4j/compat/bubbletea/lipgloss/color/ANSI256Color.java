@@ -12,6 +12,11 @@ public final class ANSI256Color implements TerminalColor, RGBSupplier {
     private final ColorCodeApplyStrategy applyStrategy;
     private final int colorCode;
 
+    /**
+     * Creates a 256-color entry from an ANSI color code.
+     *
+     * @param colorCode ANSI 256 color code
+     */
     public ANSI256Color(int colorCode) {
         this.applyStrategy = new ColorCodeApplyStrategy(colorCode);
         this.colorCode = colorCode;
@@ -27,10 +32,16 @@ public final class ANSI256Color implements TerminalColor, RGBSupplier {
         return applyStrategy.applyForForeground(style);
     }
 
+    @Override
     public RGB rgb() {
         return RGB.fromHexString(ANSIColors.ANSI_HEX[colorCode]);
     }
 
+    /**
+     * Converts this 256-color entry to the closest ANSI 16-color entry.
+     *
+     * @return closest ANSI 16-color entry
+     */
     public ANSIColor toANSIColor() {
         int ansiColorCode = 0;
         float minDistance = Float.MAX_VALUE;

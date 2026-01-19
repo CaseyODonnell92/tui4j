@@ -3,8 +3,8 @@ package com.williamcallahan.tui4j.compat.bubbletea.lipgloss.tree;
 import com.williamcallahan.tui4j.compat.bubbletea.lipgloss.Style;
 
 /**
- * Port of Lip Gloss style function.
- * Bubble Tea: bubbletea/examples/list-fancy/main.go
+ * Port of the Lip Gloss tree style callback.
+ * Upstream: github.com/charmbracelet/lipgloss/tree (StyleFunc)
  */
 @FunctionalInterface
 public interface StyleFunction {

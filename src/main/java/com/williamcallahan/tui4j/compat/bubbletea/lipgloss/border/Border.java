@@ -14,8 +14,24 @@ import org.jline.utils.AttributedStyle;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Port of Lip Gloss border.
- * Bubble Tea: bubbletea/examples/list-fancy/main.go
+ * Border character definitions.
+ * <p>
+ * Port of `lipgloss/border.go`.
+ * Defines the character sets used for drawing box borders.
+ *
+ * @param top top edge characters
+ * @param bottom bottom edge characters
+ * @param left left edge characters
+ * @param right right edge characters
+ * @param topLeft top-left corner character
+ * @param topRight top-right corner character
+ * @param bottomLeft bottom-left corner character
+ * @param bottomRight bottom-right corner character
+ * @param middleLeft middle-left junction character
+ * @param middleRight middle-right junction character
+ * @param middle middle junction character
+ * @param middleTop middle-top junction character
+ * @param middleBottom middle-bottom junction character
  */
 public record Border(
         String top,
@@ -35,18 +51,38 @@ public record Border(
         String middleBottom
 ) {
 
+    /**
+     * Returns the width of the top border edge.
+     *
+     * @return top edge width
+     */
     public int getTopSize() {
         return getBorderEdgeWidth(topLeft, top, topRight);
     }
 
+    /**
+     * Returns the width of the right border edge.
+     *
+     * @return right edge width
+     */
     public int getRightSize() {
         return getBorderEdgeWidth(topRight, right, bottomRight);
     }
 
+    /**
+     * Returns the width of the bottom border edge.
+     *
+     * @return bottom edge width
+     */
     public int getBottomSize() {
         return getBorderEdgeWidth(bottomLeft, bottom, bottomRight);
     }
 
+    /**
+     * Returns the width of the left border edge.
+     *
+     * @return left edge width
+     */
     public int getLeftSize() {
         return getBorderEdgeWidth(topLeft, left, bottomLeft);
     }
@@ -62,6 +98,25 @@ public record Border(
         return maxWidth;
     }
 
+    /**
+     * Applies border characters around the provided string.
+     *
+     * @param string content to wrap
+     * @param hasTop whether to render top edge
+     * @param hasRight whether to render right edge
+     * @param hasBottom whether to render bottom edge
+     * @param hasLeft whether to render left edge
+     * @param borderTopForeground top foreground color
+     * @param borderRightForeground right foreground color
+     * @param borderBottomForeground bottom foreground color
+     * @param borderLeftForeground left foreground color
+     * @param borderTopBackground top background color
+     * @param borderRightBackground right background color
+     * @param borderBottomBackground bottom background color
+     * @param borderLeftBackground left background color
+     * @param renderer renderer to apply styling
+     * @return rendered border string
+     */
     public String applyBorders(String string,
                                boolean hasTop,
                                boolean hasRight,

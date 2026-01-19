@@ -10,8 +10,10 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * Abstraction for rendering and terminal mode control.
- * Bubble Tea: bubbletea/examples/list-fancy/main.go
+ * Tree structure renderer.
+ * <p>
+ * Port of `lipgloss/tree`.
+ * Handles the visual hierarchy, indentation, and joining of tree nodes.
  */
 public class Renderer {
     private TreeStyle style;

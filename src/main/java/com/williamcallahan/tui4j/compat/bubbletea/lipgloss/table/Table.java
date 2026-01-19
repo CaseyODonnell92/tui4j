@@ -12,8 +12,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Port of Lipgloss table component.
- * Bubble Tea: lipgloss/table/table.go
+ * Data table component.
+ * <p>
+ * Port of `lipgloss/table`.
+ * Renders structured data in a grid with customizable borders, headers, and cell styling.
  */
 public class Table {
 
@@ -171,6 +173,10 @@ public class Table {
         return this;
     }
 
+    /**
+     * Renders the table to a string.
+     * Computes dimensions, applies borders, and renders headers and rows.
+     */
     public String render() {
         boolean hasHeaders = !headers.isEmpty();
         boolean hasRows = data != null && data.rows() > 0;
@@ -381,31 +387,6 @@ public class Table {
             }
         }
 
-        for (int c = 0; c < data.columns(); c++) {
-            String cell = "…";
-            if (!isOverflow) {
-                cell = data.at(index, c);
-            }
-
-            Style cellStyle = style(index, c);
-            if (!wrap) {
-                cell = truncateCell(cell, index, c);
-            }
-
-            int cellWidth = widths[c] - cellStyle.getHorizontalMargins();
-            String renderedCell = cellStyle
-                    .height(rowHeight - cellStyle.getVerticalMargins())
-                    .width(cellWidth)
-                    .render(cell);
-            cells.add(renderedCell);
-
-            if (c < data.columns() - 1 && borderColumn) {
-                for (int i = 0; i < rowHeight; i++) {
-                    cells.add(leftBorder);
-                }
-            }
-        }
-
         if (borderRight) {
             String rightBorder = borderStyle.render(border.right()) + "\n";
             for (int i = 0; i < rowHeight; i++) {
@@ -417,20 +398,7 @@ public class Table {
             cells.set(i, cells.get(i).replaceAll("\n$", ""));
         }
 
-        s.append(joinHorizontal(cells.toArray(new String[0]))).append("\n");
-
-        if (borderRow && index < data.rows() - 1 && !isOverflow) {
-            s.append(borderStyle.render(border.middleLeft()));
-            for (int i = 0; i < widths.length; i++) {
-                s.append(borderStyle.render(border.bottom().repeat(widths[i])));
-                if (i < widths.length - 1 && borderColumn) {
-                    s.append(borderStyle.render(border.middle()));
-                }
-            }
-            s.append(borderStyle.render(border.middleRight())).append("\n");
-        }
-
-        return s.toString();
+        return joinHorizontal(cells.toArray(new String[0]));
     }
 
     private String joinHorizontal(String... parts) {
@@ -478,9 +446,13 @@ public class Table {
 
     private void resize() {
         int numCols = Math.max(headers.size(), data != null ? data.columns() : 0);
-        widths = new int[numCols];
-        heights = new int[data.rows() + boolToInt(!headers.isEmpty())];
+        calculateWidths(numCols);
+        calculateHeights(numCols);
+        adjustWidthsForConstraint(numCols);
+    }
 
+    private void calculateWidths(int numCols) {
+        widths = new int[numCols];
         for (int c = 0; c < numCols; c++) {
             int maxWidth = 0;
             for (int r = 0; r < data.rows(); r++) {
@@ -494,7 +466,10 @@ public class Table {
             }
             widths[c] = maxWidth;
         }
+    }
 
+    private void calculateHeights(int numCols) {
+        heights = new int[data.rows() + boolToInt(!headers.isEmpty())];
         for (int r = 0; r < data.rows(); r++) {
             int maxHeight = 1;
             for (int c = 0; c < numCols; c++) {
@@ -526,7 +501,9 @@ public class Table {
             }
             heights[0] = headerHeight;
         }
+    }
 
+    private void adjustWidthsForConstraint(int numCols) {
         if (width > 0) {
             int availableWidth = width;
             if (borderLeft) {

@@ -12,9 +12,14 @@ import com.williamcallahan.tui4j.compat.bubbletea.lipgloss.color.RGBColor;
 import com.williamcallahan.tui4j.compat.bubbletea.lipgloss.color.TerminalColor;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Progress bar bubble with gradient support.
+ * <p>
+ * Port of `bubbles/progress`.
+ * Visualizes a percentage value, optionally using a spring animation for smooth transitions.
+ */
 public class Progress implements Model {
 
     private static final double FPS = 60.0;
@@ -117,6 +122,9 @@ public class Progress implements Model {
         return withGradient("#5A56E0", "#EE6FF8");
     }
 
+    /**
+     * Configures a color gradient for the filled portion of the bar.
+     */
     public Progress withGradient(String colorA, String colorB) {
         return setRamp(colorA, colorB, false);
     }
@@ -141,11 +149,7 @@ public class Progress implements Model {
     }
 
     private static RGB parseColor(String color) {
-        try {
-            return RGB.fromHexString(color);
-        } catch (NumberFormatException e) {
-            return RGB.black();
-        }
+        return RGB.fromHexString(color);
     }
 
     public void setSpringOptions(double frequency, double damping) {
@@ -162,11 +166,7 @@ public class Progress implements Model {
             return colorProfile;
         }
         if (cachedColorProfile == null) {
-            try {
-                cachedColorProfile = Renderer.defaultRenderer().colorProfile();
-            } catch (Exception e) {
-                cachedColorProfile = ColorProfile.ANSI256;
-            }
+            cachedColorProfile = Renderer.defaultRenderer().colorProfile();
         }
         return cachedColorProfile;
     }
@@ -379,10 +379,7 @@ public class Progress implements Model {
         percent = Math.max(0, Math.min(1, percent));
         String percentage = String.format(percentFormat, percent * 100);
         if (percentageStyle != null) {
-            try {
-                percentage = percentageStyle.inline(true).render(percentage);
-            } catch (Exception e) {
-            }
+            percentage = percentageStyle.inline(true).render(percentage);
         }
         return percentage;
     }

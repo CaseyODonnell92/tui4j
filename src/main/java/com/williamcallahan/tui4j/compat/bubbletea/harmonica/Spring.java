@@ -1,5 +1,11 @@
 package com.williamcallahan.tui4j.compat.bubbletea.harmonica;
 
+/**
+ * Physics-based spring animation primitive.
+ * <p>
+ * Port of `charmbracelet/harmonica`.
+ * Simulates a damped spring system for natural animation curves.
+ */
 public class Spring {
 
     private static final double EPSILON = Math.nextAfter(1.0, 2.0) - 1.0;
@@ -90,6 +96,10 @@ public class Spring {
         }
     }
 
+    /**
+     * Advances the spring simulation by one step.
+     * Calculates the new position and velocity based on the pre-computed coefficients.
+     */
     public double[] update(double pos, double vel, double equilibriumPos) {
         double oldPos = pos - equilibriumPos;
         double newPos = oldPos * posPosCoef + vel * posVelCoef + equilibriumPos;

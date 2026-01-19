@@ -7,8 +7,10 @@ import com.williamcallahan.tui4j.compat.bubbletea.lipgloss.tree.TreeEnumerator;
 import com.williamcallahan.tui4j.compat.bubbletea.lipgloss.tree.TreeIndenter;
 
 /**
- * Port of Lip Gloss list.
- * Bubble Tea: bubbletea/examples/list-fancy/main.go
+ * List component.
+ * <p>
+ * Port of `lipgloss/list`.
+ * Renders an ordered or unordered list of items using the underlying Tree component.
  */
 public class List {
 
@@ -24,7 +26,7 @@ public class List {
     }
 
     public List hide(boolean hide) {
-        tree.hide();
+        tree.hide(hide);
         return this;
     }
 
@@ -74,6 +76,9 @@ public class List {
         return this;
     }
 
+    /**
+     * Renders the list to a string.
+     */
     public String render() {
         return tree.render();
     }

@@ -6,6 +6,8 @@ import java.util.List;
 /**
  * Port of Bubbles table Row.
  * Bubble Tea: bubbles/table/table.go
+ *
+ * @param cells row cell values
  */
 public record Row(
         List<String> cells

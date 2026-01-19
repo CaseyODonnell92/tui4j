@@ -5,11 +5,15 @@ import com.williamcallahan.tui4j.compat.bubbletea.message.KeyPressMessage;
 import com.williamcallahan.tui4j.compat.bubbletea.bubbles.key.Binding;
 
 /**
- * Port of Bubbles paginator.
- * Bubble Tea: bubbletea/examples/paginator/main.go
+ * Port of the Bubble Tea paginator component.
+ * Upstream: github.com/charmbracelet/bubbles/paginator (Model)
  */
 public class Paginator {
 
+    /**
+     * Port of the paginator option hook used during construction.
+     * Upstream: github.com/charmbracelet/bubbles/paginator (Option)
+     */
     public interface Option {
 
         static Option withTotalPages(int totalPages) {

@@ -70,6 +70,7 @@ public class PipeExample implements Model {
                 return null;
             }
         } catch (IOException e) {
+            System.err.println("Failed to check system input availability: " + e.getMessage());
             return null;
         }
 
@@ -82,6 +83,7 @@ public class PipeExample implements Model {
             }
         } catch (IOException e) {
             System.err.println("Error reading piped input: " + e.getMessage());
+            return null;
         }
         return sb.toString();
     }

@@ -3,8 +3,8 @@ package com.williamcallahan.tui4j.ansi;
 import java.util.Arrays;
 
 /**
- * Transition table for ANSI parsing.
- * tui4j: src/main/java/com/williamcallahan/tui4j/ansi/TransitionTable.java
+ * Port of the Bubble Tea ANSI state transition table.
+ * Upstream: github.com/charmbracelet/bubbletea (ansi/transition_table.go)
  */
 public class TransitionTable {
 
@@ -242,5 +242,12 @@ public class TransitionTable {
         return new Transition(nextState, action);
     }
 
+    /**
+     * Port of a transition tuple produced by the state table.
+     * Upstream: github.com/charmbracelet/bubbletea (ansi/transition_table.go)
+     *
+     * @param state next state after transition
+     * @param action action to perform
+     */
     public record Transition(State state, Action action) {}
 }

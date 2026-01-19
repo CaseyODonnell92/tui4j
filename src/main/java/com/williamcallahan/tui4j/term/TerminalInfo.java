@@ -5,6 +5,9 @@ import com.williamcallahan.tui4j.compat.bubbletea.lipgloss.color.TerminalColor;
 /**
  * Represents terminal capability and background info.
  * tui4j: src/main/java/com/williamcallahan/tui4j/term/TerminalInfo.java
+ *
+ * @param tty whether the terminal is a TTY
+ * @param backgroundColor terminal background color
  */
 public record TerminalInfo(boolean tty, TerminalColor backgroundColor) {
 

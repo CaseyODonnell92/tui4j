@@ -3,6 +3,10 @@ package com.williamcallahan.tui4j.compat.bubbletea.lipgloss.color;
 /**
  * Port of Lip Gloss rgb.
  * Bubble Tea: bubbletea/examples/list-fancy/main.go
+ *
+ * @param r red channel (0-1)
+ * @param g green channel (0-1)
+ * @param b blue channel (0-1)
  */
 public record RGB(float r, float g, float b) {
 

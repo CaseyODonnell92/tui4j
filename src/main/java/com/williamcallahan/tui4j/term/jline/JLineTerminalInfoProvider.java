@@ -10,11 +10,16 @@ import org.jline.utils.NonBlockingReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * TerminalInfoProvider backed by JLine.
  * tui4j: src/main/java/com/williamcallahan/tui4j/term/jline/JLineTerminalInfoProvider.java
  */
 public class JLineTerminalInfoProvider implements TerminalInfoProvider {
+
+    private static final Logger logger = Logger.getLogger(JLineTerminalInfoProvider.class.getName());
 
     private static class Response {
 
@@ -75,7 +80,7 @@ public class JLineTerminalInfoProvider implements TerminalInfoProvider {
                 readNextResponse(reader);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Failed to read terminal info", e);
         }
 
         if (!backgroundColor.isEmpty()) {
@@ -171,10 +176,10 @@ public class JLineTerminalInfoProvider implements TerminalInfoProvider {
 
         // Convert each component from 2-char hex to int
         try {
-            int r = Integer.parseInt(parts[0].substring(0, 2), 16) / 255;
-            int g = Integer.parseInt(parts[1].substring(0, 2), 16) / 255;
-            int b = Integer.parseInt(parts[2].substring(0, 2), 16) / 255;
-            return new RGBColor(r, g, b);
+            int r = Integer.parseInt(parts[0].substring(0, 2), 16);
+            int g = Integer.parseInt(parts[1].substring(0, 2), 16);
+            int b = Integer.parseInt(parts[2].substring(0, 2), 16);
+            return new RGBColor(String.format("#%02x%02x%02x", r, g, b));
         } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
             throw new IllegalArgumentException("Invalid color format: invalid hex values");
         }

@@ -7,13 +7,13 @@ import org.jline.utils.AttributedCharSequence;
  * Bubble Tea: bubbletea/examples/list-fancy/main.go
  */
 public enum ColorProfile {
-    // TrueColor, 24-bit color profile
+    /** TrueColor, 24-bit color profile. */
     TrueColor(AttributedCharSequence.TRUE_COLORS),
-    // ANSI256, 8-bit color profile
+    /** ANSI256, 8-bit color profile. */
     ANSI256(256),
-    // ANSI, 4-bit color profile
+    /** ANSI, 4-bit color profile. */
     ANSI(16),
-    // Ascii, uncolored profile
+    /** Ascii, uncolored profile. */
     Ascii(1);
 
     private final int colorsCount;
@@ -25,6 +25,9 @@ public enum ColorProfile {
     /**
      * Color creates a {@link TerminalColor} from a string. Valid inputs are hex colors, as well as
      * ANSI color codes (0-15, 16-255).
+     *
+     * @param color color string
+     * @return terminal color, or null when parsing fails
      */
     public TerminalColor color(String color) {
         if (color == null || color.isBlank()) {
@@ -52,6 +55,9 @@ public enum ColorProfile {
 
     /**
      * Transforms given {@link TerminalColor} to a {@link TerminalColor} supported within the {@link ColorProfile}.
+     *
+     * @param terminalColor terminal color
+     * @return compatible terminal color
      */
     public TerminalColor convert(TerminalColor terminalColor) {
         if (this == Ascii) {
@@ -78,6 +84,11 @@ public enum ColorProfile {
         return terminalColor;
     }
 
+    /**
+     * Returns the number of colors available for this profile.
+     *
+     * @return color count
+     */
     public int colorsCount() {
         return colorsCount;
     }

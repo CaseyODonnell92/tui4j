@@ -8,4 +8,10 @@ import com.williamcallahan.tui4j.compat.bubbletea.Message;
  * tui4j: src/main/java/com/williamcallahan/tui4j/message/CheckWindowSizeMessage.java
  */
 public class CheckWindowSizeMessage implements Message {
+
+    /**
+     * Creates a window size check message.
+     */
+    public CheckWindowSizeMessage() {
+    }
 }

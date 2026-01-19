@@ -1,11 +1,15 @@
 package com.williamcallahan.tui4j.compat.bubbletea.lipgloss.tree;
 
 /**
- * Port of Lip Gloss filter.
- * Bubble Tea: bubbletea/examples/list-fancy/main.go
+ * Port of the Lip Gloss tree filter wrapper.
+ * Upstream: github.com/charmbracelet/lipgloss/tree (Filter)
  */
 public class Filter implements Children {
 
+    /**
+     * Port of the tree filter predicate.
+     * Upstream: github.com/charmbracelet/lipgloss/tree (FilterFunc)
+     */
     public interface FilterFunction {
         boolean filter(int index);
     }
@@ -39,12 +43,12 @@ public class Filter implements Children {
 
     @Override
     public Children remove(int index) {
-        return null;
+        throw new UnsupportedOperationException("Filter is a read-only view");
     }
 
     @Override
     public Children append(Node child) {
-        return null;
+        throw new UnsupportedOperationException("Filter is a read-only view");
     }
 
     @Override

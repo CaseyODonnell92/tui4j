@@ -6,7 +6,25 @@ package com.williamcallahan.tui4j.compat.bubbletea;
  */
 public interface Model {
 
+    /**
+     * Initializes the model.
+     *
+     * @return initial command
+     */
     Command init();
+
+    /**
+     * Updates the model with a message.
+     *
+     * @param msg message to process
+     * @return update result
+     */
     UpdateResult<? extends Model> update(Message msg);
+
+    /**
+     * Renders the current view.
+     *
+     * @return rendered view
+     */
     String view();
 }

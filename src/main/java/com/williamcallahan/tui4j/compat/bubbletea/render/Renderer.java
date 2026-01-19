@@ -3,102 +3,163 @@ package com.williamcallahan.tui4j.compat.bubbletea.render;
 import com.williamcallahan.tui4j.compat.bubbletea.Message;
 
 /**
- * Abstraction for rendering and terminal mode control.
- * tui4j: src/main/java/com/williamcallahan/tui4j/compat/bubbletea/render/Renderer.java
+ * Core interface for rendering the TUI and controlling terminal modes.
+ * <p>
+ * Port of Bubble Tea's `Renderer` interface (renderer.go).
+ * Handles the actual output to the terminal, including screen clearing,
+ * cursor management, and mouse event tracking.
  */
 public interface Renderer {
-    // Start the renderer.
-    // Bubble Tea: seeks to replicate bubbletea/renderer.go start behavior.
+    /**
+     * Starts the renderer loop.
+     */
     void start();
-    // Stop the renderer.
-    // Bubble Tea: seeks to replicate bubbletea/renderer.go stop behavior.
+
+    /**
+     * Stops the renderer loop and cleans up resources.
+     */
     void stop();
 
-    // Bubble Tea: seeks to replicate bubbletea/renderer.go write behavior.
+    /**
+     * Writes the given view string to the terminal buffer.
+     */
     void write(String view);
-    // Bubble Tea: seeks to replicate bubbletea/renderer.go repaint behavior.
+
+    /**
+     * Forces a full repaint of the screen on the next cycle.
+     */
     void repaint();
-    // Bubble Tea: seeks to replicate bubbletea/renderer.go clearScreen behavior.
+
+    /**
+     * Clears the terminal screen.
+     */
     void clearScreen();
 
-    // Bubble Tea: seeks to replicate bubbletea/renderer.go altScreen behavior.
+    /**
+     * Returns true if the renderer is currently using the alternate screen buffer.
+     */
     boolean altScreen();
-    // Bubble Tea: seeks to replicate bubbletea/renderer.go enterAltScreen behavior.
+
+    /**
+     * Switches to the alternate screen buffer (e.g. for full-screen apps).
+     */
     void enterAltScreen();
-    // Bubble Tea: seeks to replicate bubbletea/renderer.go exitAltScreen behavior.
+
+    /**
+     * Restores the main screen buffer.
+     */
     void exitAltScreen();
 
-    // Bubble Tea: seeks to replicate bubbletea/renderer.go showCursor behavior.
+    /**
+     * Shows the terminal cursor.
+     */
     void showCursor();
-    // Bubble Tea: seeks to replicate bubbletea/renderer.go hideCursor behavior.
+
+    /**
+     * Hides the terminal cursor.
+     */
     void hideCursor();
 
-    // enableMouseNormalTracking enables basic mouse reporting (click/wheel).
+    /**
+     * Enables basic mouse reporting (click/wheel).
+     */
     default void enableMouseNormalTracking() {
     }
-    // disableMouseNormalTracking disables basic mouse reporting.
+
+    /**
+     * Disables basic mouse reporting.
+     */
     default void disableMouseNormalTracking() {
     }
 
-    // enableMouseCellMotion enables mouse click, release, wheel and motion
-    // events if a mouse button is pressed (i.e., drag events).
-    // Bubble Tea: seeks to replicate bubbletea/renderer.go enableMouseCellMotion behavior.
+    /**
+     * Enables mouse click, release, wheel and motion events if a button is pressed (drag).
+     */
     default void enableMouseCellMotion() {
     }
-    // disableMouseCellMotion disables Mouse Cell Motion tracking.
-    // Bubble Tea: seeks to replicate bubbletea/renderer.go disableMouseCellMotion behavior.
+
+    /**
+     * Disables mouse cell motion tracking.
+     */
     default void disableMouseCellMotion() {
     }
 
-    // enableMouseAllMotion enables mouse click, release, wheel and motion
-    // events, regardless of whether a mouse button is pressed. Many modern
-    // terminals support this, but not all.
-    // Bubble Tea: seeks to replicate bubbletea/renderer.go enableMouseAllMotion behavior.
+    /**
+     * Enables all mouse events (click, release, wheel, motion) regardless of button state.
+     */
     void enableMouseAllMotion();
-    // disableMouseAllMotion disables All Motion mouse tracking.
-    // Bubble Tea: seeks to replicate bubbletea/renderer.go disableMouseAllMotion behavior.
+
+    /**
+     * Disables all motion mouse tracking.
+     */
     void disableMouseAllMotion();
 
-    // enableMouseSGRMode enables mouse extended mode (SGR).
-    // Bubble Tea: seeks to replicate bubbletea/renderer.go enableMouseSGRMode behavior.
+    /**
+     * Enables extended mouse mode (SGR) for better coordinate support.
+     */
     void enableMouseSGRMode();
-    // disableMouseSGRMode disables mouse extended mode (SGR).
-    // Bubble Tea: seeks to replicate bubbletea/renderer.go disableMouseSGRMode behavior.
+
+    /**
+     * Disables extended mouse mode.
+     */
     void disableMouseSGRMode();
 
-    // setMouseCursorText changes mouse pointer to I-beam shape (OSC 22).
-    // tui4j extension; no Bubble Tea equivalent.
+    /**
+     * Changes mouse pointer to I-beam shape (OSC 22).
+     * <p>
+     * tui4j extension; no Bubble Tea equivalent.
+     */
     default void setMouseCursorText() {
     }
 
-    // setMouseCursorPointer changes mouse pointer to hand shape (OSC 22).
-    // tui4j extension; no Bubble Tea equivalent.
+    /**
+     * Changes mouse pointer to hand shape (OSC 22).
+     * <p>
+     * tui4j extension; no Bubble Tea equivalent.
+     */
     default void setMouseCursorPointer() {
     }
 
-    // resetMouseCursor resets mouse pointer to default shape (OSC 22).
-    // tui4j extension; no Bubble Tea equivalent.
+    /**
+     * Resets mouse pointer to default shape (OSC 22).
+     * <p>
+     * tui4j extension; no Bubble Tea equivalent.
+     */
     default void resetMouseCursor() {
     }
 
-    // copyToClipboard copies text to system clipboard (OSC 52).
-    // tui4j extension; no Bubble Tea equivalent.
+    /**
+     * Copies text to the system clipboard (OSC 52).
+     * <p>
+     * tui4j extension; no Bubble Tea equivalent.
+     */
     default void copyToClipboard(String text) {
     }
 
-    // reportFocus returns whether reporting focus events is enabled.
-    // Bubble Tea: seeks to replicate bubbletea/renderer.go reportFocus behavior.
+    /**
+     * Returns whether focus event reporting is enabled.
+     */
     boolean reportFocus();
-    // enableReportFocus reports focus events to the program.
-    // Bubble Tea: seeks to replicate bubbletea/renderer.go enableReportFocus behavior.
+
+    /**
+     * Enables reporting of terminal focus gain/loss events.
+     */
     void enableReportFocus();
-    // disableReportFocus stops reporting focus events to the program.
-    // Bubble Tea: seeks to replicate bubbletea/renderer.go disableReportFocus behavior.
+
+    /**
+     * Disables reporting of terminal focus events.
+     */
     void disableReportFocus();
 
-    // tui4j extension; no Bubble Tea equivalent.
+    /**
+     * Notifies the renderer that the model has changed and a render is needed.
+     * <p>
+     * tui4j extension; no Bubble Tea equivalent.
+     */
     void notifyModelChanged();
 
-    // Bubble Tea: seeks to replicate bubbletea/standard_renderer.go handleMessages behavior.
+    /**
+     * Processes a message that might affect the renderer state (e.g. window resize).
+     */
     void handleMessage(Message msg);
 }

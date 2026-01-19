@@ -4,6 +4,10 @@ import com.williamcallahan.tui4j.compat.bubbletea.lipgloss.Position;
 import com.williamcallahan.tui4j.compat.bubbletea.lipgloss.Style;
 import com.williamcallahan.tui4j.compat.bubbletea.lipgloss.color.Color;
 
+/**
+ * Port of Bubbles file picker styles.
+ * Upstream: github.com/charmbracelet/bubbles/filepicker (Styles)
+ */
 public class Styles {
 
     private Style disabledCursor;

@@ -7,7 +7,20 @@ import org.jline.utils.AttributedStyle;
  * Bubble Tea: bubbletea/examples/list-fancy/main.go
  */
 public interface ColorApplyStrategy {
+    /**
+     * Applies a foreground color to the style.
+     *
+     * @param attributedStyle style to update
+     * @return updated style
+     */
     AttributedStyle applyForForeground(AttributedStyle attributedStyle);
+
+    /**
+     * Applies a background color to the style.
+     *
+     * @param attributedStyle style to update
+     * @return updated style
+     */
     AttributedStyle applyForBackground(AttributedStyle attributedStyle);
 }
 

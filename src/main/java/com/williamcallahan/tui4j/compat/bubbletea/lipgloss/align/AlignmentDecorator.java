@@ -17,7 +17,22 @@ import static com.williamcallahan.tui4j.compat.bubbletea.lipgloss.Position.Top;
  */
 public class AlignmentDecorator {
 
+    /**
+     * Utility class for text alignment.
+     */
+    private AlignmentDecorator() {
+    }
+
+    /**
+     * Aligns text vertically within a fixed height.
+     *
+     * @param input text to align
+     * @param position vertical alignment
+     * @param height target height
+     * @return vertically aligned text
+     */
     public static String alignTextVertical(String input, Position position, int height) {
+
         int strHeight = (int) input.chars().filter(ch -> ch == '\n').count() + 1;
         if (height < strHeight) {
             return input;
@@ -41,6 +56,15 @@ public class AlignmentDecorator {
         return input;
     }
 
+    /**
+     * Aligns text horizontally within a fixed width.
+     *
+     * @param input text to align
+     * @param position horizontal alignment
+     * @param width target width
+     * @param attributedStyle style used for padding
+     * @return horizontally aligned text
+     */
     public static String alignTextHorizontal(String input, Position position, int width, AttributedStyle attributedStyle) {
         TextLines textLines = TextLines.fromText(input);
         int widestLine = textLines.widestLineLength();

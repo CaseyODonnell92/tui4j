@@ -12,7 +12,11 @@ public final class ANSIColor implements TerminalColor, RGBSupplier {
     private final ColorApplyStrategy applyStrategy;
     private final int colorCode;
 
-    // ANSIColor is a color (0-15) as defined by the ANSI Standard.
+    /**
+     * Creates an ANSI 16-color entry from an ANSI color code.
+     *
+     * @param colorCode ANSI 16-color code
+     */
     public ANSIColor(int colorCode) {
         this.applyStrategy = new ColorCodeApplyStrategy(colorCode);
         this.colorCode = colorCode;
@@ -28,6 +32,7 @@ public final class ANSIColor implements TerminalColor, RGBSupplier {
         return applyStrategy.applyForForeground(style);
     }
 
+    @Override
     public RGB rgb() {
         return RGB.fromHexString(ANSIColors.ANSI_HEX[colorCode]);
     }

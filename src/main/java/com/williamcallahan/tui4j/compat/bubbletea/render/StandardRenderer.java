@@ -68,6 +68,10 @@ public class StandardRenderer implements Renderer {
             this.width = terminal.getWidth();
             this.height = terminal.getHeight();
         } catch (Throwable t) {
+            // Log the error but fallback to safe defaults to prevent crash
+            // The renderer can recover when a window size message is received later
+            // Use system err/out sparingly or logger if available
+            System.err.println("Failed to get initial terminal size, defaulting to 80x24: " + t.getMessage());
             this.width = 80;
             this.height = 24;
         }

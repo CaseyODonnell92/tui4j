@@ -30,6 +30,14 @@ class StyleTest {
         assertThat(rendered).isEqualTo(expectedOutput);
     }
 
+    @ParameterizedTest
+    @MethodSource("inheritData")
+    void testInheritCopiesStyle(Style base, Style child) {
+        child.inherit(base);
+
+        assertThat(child.render("hello")).isEqualTo(base.render("hello"));
+    }
+
     private static Stream<Arguments> styleData() {
         Renderer renderer = defaultRenderer();
         renderer.setColorProfile(ColorProfile.TrueColor);
@@ -57,6 +65,29 @@ class StyleTest {
                 Arguments.of("maxHeight with border", "line1\nline2\nline3", renderer.newStyle().maxHeight(1).borderDecoration(StandardBorder.NormalBorder), "┌─────┐"),
                 Arguments.of("maxHeight truncation with multiline", "line1\nline2\nline3\nline4\nline5", renderer.newStyle().maxHeight(3), "line1\nline2\nline3"),
                 Arguments.of("maxWidth with multiline and ellipsis", "line1_extra\nline2_extra\nline3_extra", renderer.newStyle().maxWidth(5).ellipsis(".."), "lin..\nlin..\nlin..")
+        );
+    }
+
+    private static Stream<Arguments> inheritData() {
+        Renderer renderer = defaultRenderer();
+        renderer.setColorProfile(ColorProfile.TrueColor);
+        renderer.setHasDarkBackground(true);
+
+        Style base = renderer.newStyle()
+                .foreground(Color.color("#5A56E0"))
+                .background(Color.color("#0f0f0f"))
+                .bold(true)
+                .italic(true)
+                .underline(true)
+                .padding(1, 2, 3, 4)
+                .margin(1, 2, 3, 4)
+                .maxWidth(10)
+                .ellipsis("...")
+                .border(StandardBorder.NormalBorder, true)
+                .align(Position.Center, Position.Bottom);
+
+        return Stream.of(
+                Arguments.of(base, renderer.newStyle())
         );
     }
 }

@@ -6,11 +6,15 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 /**
- * Grapheme cluster parser.
- * tui4j: src/main/java/com/williamcallahan/tui4j/ansi/GraphemeCluster.java
+ * Port of the Bubble Tea grapheme cluster parser.
+ * Upstream: github.com/charmbracelet/bubbletea (ansi/grapheme.go)
  */
 public class GraphemeCluster {
 
+    /**
+     * Port of the grapheme cluster extraction helper.
+     * Upstream: github.com/charmbracelet/bubbletea (ansi/grapheme.go)
+     */
     public static GraphemeResult getFirstGraphemeCluster(byte[] bytes, int startIndex, int state) {
         // Convert bytes to string
         String text = new String(bytes, startIndex, bytes.length - startIndex, StandardCharsets.UTF_8);

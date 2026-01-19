@@ -7,8 +7,10 @@ import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Port of Lip Gloss tree.
- * Bubble Tea: bubbletea/examples/list-fancy/main.go
+ * Hierarchical tree data structure.
+ * <p>
+ * Port of `lipgloss/tree`.
+ * Represents a node in a tree that can be rendered as a nested list.
  */
 public class Tree implements Node {
 
@@ -27,6 +29,11 @@ public class Tree implements Node {
 
     public Tree hide() {
         this.hidden = true;
+        return this;
+    }
+
+    public Tree hide(boolean hide) {
+        this.hidden = hide;
         return this;
     }
 
@@ -61,6 +68,9 @@ public class Tree implements Node {
         this.value = value;
     }
 
+    /**
+     * Adds a child node or value to this tree node.
+     */
     public Tree child(Object... children) {
         for (Object child : children) {
             switch (child) {
@@ -197,6 +207,9 @@ public class Tree implements Node {
         return renderer;
     }
 
+    /**
+     * Renders the tree hierarchy to a string.
+     */
     public String render() {
         return ensureRenderer().render(this, true, "");
     }

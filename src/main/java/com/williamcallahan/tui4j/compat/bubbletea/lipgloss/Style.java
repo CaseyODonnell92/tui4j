@@ -22,8 +22,10 @@ import java.util.stream.IntStream;
 import static com.williamcallahan.tui4j.compat.bubbletea.lipgloss.Renderer.defaultRenderer;
 
 /**
- * Port of Lip Gloss style.
- * Bubble Tea: bubbletea/examples/list-fancy/main.go
+ * Fluent styling and layout wrapper.
+ * <p>
+ * Port of `lipgloss/style.go`.
+ * Provides a chainable API for coloring, sizing, padding, and aligning text content.
  */
 public class Style implements Cloneable {
 
@@ -390,6 +392,10 @@ public class Style implements Cloneable {
         return this;
     }
 
+    /**
+     * Applies all style rules (colors, margins, padding, borders) to the input strings.
+     * Renders the final ANSI sequence.
+     */
     public String render(String... strings) {
         AttributedStyle style = new AttributedStyle();
         if (foreground != null) {
@@ -567,7 +573,7 @@ public class Style implements Cloneable {
                 result[1] = 1;  // right
                 result[2] = 2;  // bottom
                 result[3] = 3;
-                break;// left                break;
+                break;
             default:
                 throw new IllegalArgumentException("Expected 1-4 values, got " + values.length);
         }
@@ -652,8 +658,50 @@ public class Style implements Cloneable {
     }
 
     public Style inherit(Style style) {
-        // TODO copy the rest of the inherited properties
+        this.value = style.value;
+        this.transformFunction = style.transformFunction;
+        this.background = style.background;
+        this.foreground = style.foreground;
+        this.bold = style.bold;
+        this.italic = style.italic;
         this.underline = style.underline;
+        this.blink = style.blink;
+        this.faint = style.faint;
+        this.reverse = style.reverse;
+        this.inline = style.inline;
+        this.width = style.width;
+        this.height = style.height;
+        this.maxWidth = style.maxWidth;
+        this.maxHeight = style.maxHeight;
+        this.ellipsis = style.ellipsis;
+        this.horizontalAlign = style.horizontalAlign;
+        this.verticalAlign = style.verticalAlign;
+        this.topPadding = style.topPadding;
+        this.rightPadding = style.rightPadding;
+        this.bottomPadding = style.bottomPadding;
+        this.leftPadding = style.leftPadding;
+        this.marginBackgroundColor = style.marginBackgroundColor;
+        this.topMargin = style.topMargin;
+        this.rightMargin = style.rightMargin;
+        this.bottomMargin = style.bottomMargin;
+        this.leftMargin = style.leftMargin;
+        this.borderDecoration = style.borderDecoration;
+        this.borderTop = style.borderTop;
+        this.borderRight = style.borderRight;
+        this.borderBottom = style.borderBottom;
+        this.borderLeft = style.borderLeft;
+        this.borderTopSet = style.borderTopSet;
+        this.borderRightSet = style.borderRightSet;
+        this.borderBottomSet = style.borderBottomSet;
+        this.borderLeftSet = style.borderLeftSet;
+        this.borderTopForeground = style.borderTopForeground;
+        this.borderRightForeground = style.borderRightForeground;
+        this.borderBottomForeground = style.borderBottomForeground;
+        this.borderLeftForeground = style.borderLeftForeground;
+        this.borderTopBackground = style.borderTopBackground;
+        this.borderRightBackground = style.borderRightBackground;
+        this.borderBottomBackground = style.borderBottomBackground;
+        this.borderLeftBackground = style.borderLeftBackground;
         return this;
     }
 }

@@ -1,8 +1,8 @@
 package com.williamcallahan.tui4j.compat.bubbletea.lipgloss.tree;
 
 /**
- * Port of Lip Gloss tree indenter.
- * Bubble Tea: bubbletea/examples/list-fancy/main.go
+ * Port of the Lip Gloss tree indenter.
+ * Upstream: github.com/charmbracelet/lipgloss/tree (Indenter)
  */
 @FunctionalInterface
 public interface TreeIndenter {

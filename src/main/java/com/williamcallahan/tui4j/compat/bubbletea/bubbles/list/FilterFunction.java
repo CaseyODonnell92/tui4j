@@ -1,8 +1,8 @@
 package com.williamcallahan.tui4j.compat.bubbletea.bubbles.list;
 
 /**
- * Port of Bubbles filter function.
- * Bubble Tea: bubbletea/examples/list-simple/main.go
+ * Port of the list filter function contract.
+ * Upstream: github.com/charmbracelet/bubbles/list (FilterFunc)
  */
 @FunctionalInterface
 public interface FilterFunction {

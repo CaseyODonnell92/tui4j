@@ -7,4 +7,10 @@ import com.williamcallahan.tui4j.compat.bubbletea.Message;
  * Bubble Tea: bubbletea/focus.go
  */
 public class BlurMessage implements Message {
+
+    /**
+     * Creates a blur message.
+     */
+    public BlurMessage() {
+    }
 }

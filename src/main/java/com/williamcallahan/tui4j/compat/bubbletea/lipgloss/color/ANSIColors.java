@@ -4,8 +4,17 @@ package com.williamcallahan.tui4j.compat.bubbletea.lipgloss.color;
  * Port of Lip Gloss ansi colors.
  * Bubble Tea: bubbletea/examples/list-fancy/main.go
  */
-public class ANSIColors {
+public final class ANSIColors {
 
+    /**
+     * Utility class for ANSI color tables.
+     */
+    private ANSIColors() {
+    }
+
+    /**
+     * ANSI 16-color and 256-color hex palette.
+     */
     public static final String[] ANSI_HEX = {
             "#000000",
             "#800000",
