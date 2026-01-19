@@ -1,15 +1,21 @@
 package com.williamcallahan.tui4j.compat.bubbletea;
 
 import com.williamcallahan.tui4j.compat.bubbletea.message.BatchMessage;
+import com.williamcallahan.tui4j.compat.bubbletea.message.ExecProcessMessage;
 import com.williamcallahan.tui4j.compat.bubbletea.message.QuitMessage;
 import com.williamcallahan.tui4j.compat.bubbletea.message.SequenceMessage;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests test message.
@@ -172,10 +178,53 @@ class ProgramTest {
         }
     }
 
+    @Test
+    void testExecProcessWaitsForCompletion() throws Exception {
+        TestModel testModel = new TestModel(new ArrayList<>());
+        Program program = new Program(testModel);
+
+        Thread programThread = new Thread(program::run);
+        programThread.start();
+        program.waitForInit();
+
+        AtomicLong start = new AtomicLong();
+        AtomicLong end = new AtomicLong();
+        CountDownLatch completionLatch = new CountDownLatch(1);
+
+        Command execCommand = () -> {
+            start.set(System.nanoTime());
+            try {
+                Process process = new ProcessBuilder("/bin/sh", "-c", "sleep 0.2")
+                        .redirectInput(ProcessBuilder.Redirect.PIPE)
+                        .redirectOutput(ProcessBuilder.Redirect.PIPE)
+                        .redirectError(ProcessBuilder.Redirect.PIPE)
+                        .start();
+                return new ExecProcessMessage(process, null, null);
+            } catch (IOException e) {
+                return new QuitMessage();
+            }
+        };
+
+        Command markEnd = () -> {
+            end.set(System.nanoTime());
+            completionLatch.countDown();
+            return new QuitMessage();
+        };
+
+        program.send(new SequenceMessage(
+                execCommand,
+                markEnd
+        ));
+
+        assertTrue(completionLatch.await(2, TimeUnit.SECONDS));
+        programThread.join();
+    }
+
     private static void sleep(long delay) {
         try {
             Thread.sleep(delay);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
     }

@@ -104,7 +104,11 @@ public class ExecExample implements Model {
                 if (check.waitFor() == 0) {
                     return editor;
                 }
-            } catch (IOException | InterruptedException ignored) {
+            } catch (IOException e) {
+                System.err.println("Failed to check editor: " + editor + " (" + e.getMessage() + ")");
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return "";
             }
         }
         return "";
