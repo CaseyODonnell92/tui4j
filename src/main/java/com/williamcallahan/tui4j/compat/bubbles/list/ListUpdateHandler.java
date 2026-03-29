@@ -1,6 +1,7 @@
 package com.williamcallahan.tui4j.compat.bubbles.list;
 
 import static com.williamcallahan.tui4j.compat.bubbletea.Command.batch;
+import static com.williamcallahan.tui4j.compat.bubbletea.Command.none;
 
 import com.williamcallahan.tui4j.compat.bubbles.key.Binding;
 import com.williamcallahan.tui4j.compat.bubbles.spinner.TickMessage;
@@ -12,6 +13,7 @@ import com.williamcallahan.tui4j.compat.bubbletea.QuitMessage;
 import com.williamcallahan.tui4j.compat.bubbletea.UpdateResult;
 import java.util.LinkedList;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Update/message handling for {@link List}.
@@ -24,15 +26,33 @@ final class ListUpdateHandler {
     }
 
     static UpdateResult<List> update(List list, Message msg) {
-        java.util.List<Command> commands = new LinkedList<>();
+        return switch (msg) {
+            case KeyPressMessage kpm
+                when Binding.matches(kpm, list.keys.forceQuit()) ->
+                UpdateResult.from(list, QuitMessage::new);
 
-        if (msg instanceof KeyPressMessage keyPressMessage) {
-            if (Binding.matches(keyPressMessage, list.keys.forceQuit())) {
-                return UpdateResult.from(list, QuitMessage::new);
+            case FetchedCurrentPageItems(
+                FetchedItems fetched, Runnable[] postFetch
+            ) -> handleDataSourceFetchComplete(list, fetched, postFetch);
+
+            case TickMessage tick when list.showSpinner ->
+                UpdateResult.from(list, list.spinner.update(tick).command());
+
+            case StatusMessageTimeoutMessage ignored -> {
+                ListStatusMessageManager.hideStatusMessage(list);
+                yield UpdateResult.from(list, Command.none());
             }
-        } else if (
-            msg instanceof FetchedCurrentPageItems(FetchedItems fetchedItems, Runnable[] postFetchCallbacks)
-        ) {
+
+            default -> {
+                Command cmd = list.filterState == FilterState.Filtering
+                    ? handleFiltering(list, msg)
+                    : handleBrowsing(list, msg);
+                yield UpdateResult.from(list, cmd);
+            }
+        };
+    }
+
+    private static UpdateResult<List> handleDataSourceFetchComplete(List list, FetchedItems fetchedItems, Runnable[] postFetchCallbacks) {
             list.stopSpinner();
             list.fetchingItems = false;
 
@@ -57,19 +77,6 @@ final class ListUpdateHandler {
             }
 
             return UpdateResult.from(list, ListDataFetcher.updateFilter(list));
-        } else if (msg instanceof TickMessage && list.showSpinner) {
-            commands.add(list.spinner.update(msg).command());
-        } else if (msg instanceof StatusMessageTimeoutMessage) {
-            ListStatusMessageManager.hideStatusMessage(list);
-        }
-
-        if (list.filterState == FilterState.Filtering) {
-            commands.add(handleFiltering(list, msg));
-        } else {
-            commands.add(handleBrowsing(list, msg));
-        }
-
-        return UpdateResult.from(list, batch(commands));
     }
 
     static Command cursorUp(List list) {
@@ -118,59 +125,73 @@ final class ListUpdateHandler {
     }
 
     private static Command handleBrowsing(List list, Message msg) {
-        java.util.List<Command> commands = new LinkedList<>();
+        return switch (msg) {
+            case KeyPressMessage kpm
+                when Binding.matches(kpm, list.keys.clearFilter()) ->
+                batch(list.resetFiltering(), list.itemDelegate.update(kpm, list));
 
-        if (msg instanceof KeyPressMessage keyPressMessage) {
-            if (Binding.matches(keyPressMessage, list.keys.clearFilter())) {
-                commands.add(list.resetFiltering());
-            } else if (Binding.matches(keyPressMessage, list.keys.quit())) {
-                return QuitMessage::new;
-            } else if (Binding.matches(keyPressMessage, list.keys.cursorUp())) {
-                commands.add(cursorUp(list));
-            } else if (
-                Binding.matches(keyPressMessage, list.keys.cursorDown())
-            ) {
-                commands.add(cursorDown(list));
-            } else if (Binding.matches(keyPressMessage, list.keys.prevPage())) {
-                commands.add(cursorLeft(list));
-            } else if (Binding.matches(keyPressMessage, list.keys.nextPage())) {
-                commands.add(cursorRight(list));
-            } else if (Binding.matches(keyPressMessage, list.keys.goToStart())) {
-                commands.add(gotoStart(list));
-            } else if (Binding.matches(keyPressMessage, list.keys.goToEnd())) {
-                commands.add(gotoEnd(list));
-            } else if (Binding.matches(keyPressMessage, list.keys.filter())) {
+            case KeyPressMessage kpm
+                when Binding.matches(kpm, list.keys.quit()) ->
+                QuitMessage::new;
+
+            case KeyPressMessage kpm
+                when Binding.matches(kpm, list.keys.filter()) -> {
                 ListStatusMessageManager.hideStatusMessage(list);
-                commands.add(TextInput::blink);
-
                 if (!list.paginator.onFirstPage()) {
                     list.paginator.setPage(0);
                 }
-
                 list.filterState = FilterState.Filtering;
                 list.filterInput.cursorEnd();
                 list.filterInput.focus();
                 list.updateKeybindings();
-
-                commands.add(
+                yield batch(
+                    TextInput::blink,
                     ListDataFetcher.fetchCurrentPageItems(list, () ->
                         list.cursor = 0
                     )
                 );
+            }
 
-                return batch(commands);
-            } else if (
-                Binding.matches(keyPressMessage, list.keys.showFullHelp()) ||
-                    Binding.matches(keyPressMessage, list.keys.closeFullHelp())
-            ) {
+            case KeyPressMessage kpm
+                when Binding.matches(kpm, list.keys.cursorUp()) ->
+                batch(cursorUp(list), list.itemDelegate.update(kpm, list));
+
+            case KeyPressMessage kpm
+                when Binding.matches(kpm, list.keys.cursorDown()) ->
+                batch(cursorDown(list), list.itemDelegate.update(kpm, list));
+
+            case KeyPressMessage kpm
+                when Binding.matches(kpm, list.keys.prevPage()) ->
+                batch(cursorLeft(list), list.itemDelegate.update(kpm, list));
+
+            case KeyPressMessage kpm
+                when Binding.matches(kpm, list.keys.nextPage()) ->
+                batch(cursorRight(list), list.itemDelegate.update(kpm, list));
+
+            case KeyPressMessage kpm
+                when Binding.matches(kpm, list.keys.goToStart()) ->
+                batch(gotoStart(list), list.itemDelegate.update(kpm, list));
+
+            case KeyPressMessage kpm
+                when Binding.matches(kpm, list.keys.goToEnd()) ->
+                batch(gotoEnd(list), list.itemDelegate.update(kpm, list));
+
+            case KeyPressMessage kpm
+                when Binding.matches(kpm, list.keys.showFullHelp()) ||
+                    Binding.matches(kpm, list.keys.closeFullHelp()) -> {
                 list.help.setShowAll(!list.help.showAll());
                 ListPaginationUpdater.updatePagination(list);
-
-                commands.add(ListDataFetcher.fetchCurrentPageItems(list));
+                yield batch(
+                    ListDataFetcher.fetchCurrentPageItems(list),
+                    list.itemDelegate.update(kpm, list)
+                );
             }
-            commands.add(list.itemDelegate.update(msg, list));
-        }
-        return batch(commands);
+
+            case KeyPressMessage kpm ->
+                list.itemDelegate.update(kpm, list);
+
+            default -> Command.none();
+        };
     }
 
     private static Command gotoStart(List list) {
@@ -221,41 +242,41 @@ final class ListUpdateHandler {
     }
 
     private static Command handleFiltering(List list, Message msg) {
-        java.util.List<Command> commands = new LinkedList<>();
-
-        if (msg instanceof KeyPressMessage keyPressMessage) {
-            if (
-                Binding.matches(keyPressMessage, list.keys.cancelWhileFiltering())
-            ) {
+        // Handle user key-presses related to filtering
+        Command acceptOrCancel = switch(msg) {
+           case KeyPressMessage kpm when Binding.matches(kpm, list.keys.cancelWhileFiltering()) -> {
                 list.resetFiltering();
 
-                commands.add(
-                    ListDataFetcher.fetchCurrentPageItems(list, () -> {
-                        list.keys.filter().setEnabled(true);
-                        list.keys.clearFilter().setEnabled(false);
-                    })
-                );
-            } else if (
-                Binding.matches(keyPressMessage, list.keys.acceptWhileFiltering())
-            ) {
+                yield ListDataFetcher.fetchCurrentPageItems(list, () -> {
+                   list.keys.filter().setEnabled(true);
+                   list.keys.clearFilter().setEnabled(false);
+                });
+           }
+           case KeyPressMessage kpm when Binding.matches(kpm, list.keys.acceptWhileFiltering()) -> {
                 ListStatusMessageManager.hideStatusMessage(list);
 
-                if (list.totalItems > 0) {
-                    if (list.matchedItems > 0) {
-                        list.filterInput.blur();
-                        list.filterState = FilterState.FilterApplied;
-                        list.updateKeybindings();
-
-                        if (list.filterInput.isEmpty()) {
-                            commands.add(list.resetFiltering());
-                        }
-                    } else {
-                        commands.add(list.resetFiltering());
-                    }
+                if (list.totalItems <= 0) {
+                   yield none();
                 }
-            }
-        }
 
+                if (list.matchedItems <= 0) {
+                   yield list.resetFiltering();
+                }
+
+                list.filterInput.blur();
+                list.filterState = FilterState.FilterApplied;
+                list.updateKeybindings();
+
+                if (list.filterInput.isEmpty()) {
+                   yield none();
+                }
+
+                yield none();
+           }
+           default -> none();
+        };
+
+        // Allow nested filter input model to update, see if the user has changed the filter text
         String beforeChange = list.filterInput.value();
         UpdateResult<TextInput> updateResult = list.filterInput.update(msg);
         boolean filterChanged = !Objects.equals(
@@ -263,18 +284,19 @@ final class ListUpdateHandler {
             updateResult.model().value()
         );
         list.filterInput = updateResult.model();
-        commands.add(updateResult.command());
+        Command updateResultCommand = updateResult.command();
 
+        // Conditionally fetch data based on user input, if configured to fetch new data on updated filter (default
+        // behaviour is to re-fetch on every user filter text update)
+        Command filterChangedCommand = none();
         if (filterChanged && !list.filterOnAcceptOnly) {
-            commands.add(
-                ListDataFetcher.fetchCurrentPageItems(list, () -> {
+           filterChangedCommand = ListDataFetcher.fetchCurrentPageItems(list, () -> {
                     list.keys
                         .acceptWhileFiltering()
                         .setEnabled(!list.filterInput.isEmpty());
                     ListPaginationUpdater.updatePagination(list);
-                })
-            );
+                });
         }
-        return batch(commands);
+        return batch(acceptOrCancel, updateResultCommand, filterChangedCommand);
     }
 }
